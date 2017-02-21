@@ -1,0 +1,8 @@
+Style/StringLiterals:
+  Enabled: false
+
+Style/NumericLiterals:
+  Enabled: false
+
+Documentation:
+  Enabled: false
