@@ -2,7 +2,6 @@ require_relative "../server"
 
 
 describe Server do
-=begin
   it "throws an error for invalid JSON" do
     s_threads = Server.new.launch(true)
     socket = TCPSocket.open("localhost", 44106)
@@ -63,7 +62,7 @@ describe Server do
         end
     end
 
-=end
+
       # todo handle disconnection issues
   describe "on disconnections" do
 
@@ -84,17 +83,40 @@ describe Server do
             # band leader disconnects
             puts "closed a socket."
             socket.close
-            #socket2.close
-            # this means the socket was closed
-            expect(socket2.recv(0)).to eq("")
-            puts "yes"
+            
+            # Give server some time to process, close sockets.
+            sleep(0.5)
+
 
             socket = TCPSocket.open("localhost", 44106)
             socket.print ( {"request" =>"create group","group name" => "stp","user name" => "martha"}.to_json + "\n" ) 
             response =  JSON.parse(socket.gets)
             expect(response["response"]).to eq("ok")
-
+            s_threads.each { |s| s.close}
         end
 
+        it "cancels group members who leave" do
+
+            s_threads = Server.new.launch(true)
+
+            # Have user create group
+            socket = TCPSocket.open("localhost", 44106)
+            socket.print ( {"request" =>"create group","group name" => "stp","user name" => "martha"}.to_json + "\n" ) 
+            response =  JSON.parse(socket.gets)
+
+            # Have user connect to group
+            socket2 = TCPSocket.open("localhost", 44107)
+            socket2.print ( {"request" =>"join group","group name" => "stp","user name" => "amy"}.to_json + "\n" ) 
+            response =  JSON.parse(socket2.gets)
+
+            # band member disconnects
+            puts "closed a socket."
+            socket2.close
+            
+            # Give server some time to process, close sockets.
+            sleep(0.2)
+            socket.close
+            s_threads.each { |s| s.close}
+        end
     end
 end

@@ -15,13 +15,33 @@ class Server
   end
 
   def send_ok(socket)
+    begin
      socket.puts ({"response" => "ok"}.to_json)
      socket.flush
+    rescue Errno::ECONNRESET, IOError
+      # Just don't send it. The user will get removed in the loop soon enough.
+    end
   end
 
   def send_error(socket, message)
+     begin
+     return if socket.closed?
      socket.puts ({"response" => "error", "error message" => message}.to_json )
      socket.flush
+      rescue Errno::ECONNRESET, IOError
+      # Just don't send it. The user will get removed in the loop soon enough.
+      end
+  end
+
+  def send_updated_group_info(group)
+    group.members.each do |m|
+      begin
+      m.socket.puts (group.to_json)
+      m.socket.flush
+      rescue Errno::ECONNRESET, IOError
+      # Just don't send it. The user will get removed in the loop soon enough.
+      end
+    end
   end
 
   def bandleader_loop(user, socket, group_name)
@@ -57,19 +77,26 @@ class Server
     end
     group = @groups[group_name]
     group.members << user
+    send_updated_group_info(group)
+
     # Group members are passive. The only thing they can do is quit.
     # And if that happens, I remove them from the group.
-    # "Sleep" will suffice for now 
+    # What i do is read (which updates the socket state) and If i get an exception, I close.
+    begin
     while true
-      msg = socket.gets
-      if msg.empty?
-        puts "Connection lost: #{user.name}"  
-        return
+      sleep 0.1
+      socket.read
+      if socket.closed?
+        raise IOError
       end
     end
+    rescue IOError
+      puts "Connection lost: #{user.name}"  
+      group.members.delete(user)
+      return
+    end
+
   end
-
-
 
 
   # If "test" is enabled, returns the sockets so they can be closed.

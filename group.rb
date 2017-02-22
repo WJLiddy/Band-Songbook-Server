@@ -6,6 +6,6 @@ class Group
   end
   
   def to_json
-    (@members + @leader).map { |e| e.to_json }
+    (@members + [@leader]).map { |e| e.to_json }
   end
 end
