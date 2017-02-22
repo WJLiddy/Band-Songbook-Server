@@ -17,10 +17,12 @@ class Server
 
   def send_ok(socket)
      socket.print ({"response" => "ok"}.to_json + "\n")
+     socket.flush
   end
 
   def send_error(socket, message)
      socket.print ({"response" => "error", "error message" => message}.to_json + "\n")
+     socket.flush
   end
 
   def bandleader_loop(user, socket)
@@ -55,12 +57,28 @@ class Server
         puts 'Connection Recieved.'
         # Await the first JSON packet to tell what room they want to join,
         # or if they want to create.
-        request = recv_json(socket)
-        # Create the user
-        user = User.new(request['user name'], socket)
-        # Create or join the group.
-        bandleader_loop(user, socket) if request['request'] == 'create group'
-        group_member_loop(user, socket) if request['request'] == 'join group'
+        begin
+          request = recv_json(socket)
+        rescue JSON::ParserError => e
+          send_error(socket, e.message)
+          request = nil
+        end
+
+        # Make sure the proper fields are there
+        if(!request.nil? && (request['user name'].nil? || request['request'].nil?))
+          send_error(socket, "JSON was well formed but missing username or request field")
+          request = nil
+        end
+
+        if(!request.nil?)
+          # Create the user
+          user = User.new(request['user name'], socket)
+          # Create or join the group.
+          bandleader_loop(user, socket) if request['request'] == 'create group'
+          group_member_loop(user, socket) if request['request'] == 'join group'
+        end
+        puts 'Connection Terminated.'
+        socket.close
       end
     end
   end
