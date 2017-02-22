@@ -10,7 +10,6 @@ class Server
   end
   
   # blocks until it recieves a new line from the socket, and parses the json.
-  # TODO error out otherwise.
   def recv_json(socket)
     JSON.parse(socket.gets)
   end
@@ -27,20 +26,47 @@ class Server
 
   def bandleader_loop(user, socket, group_name)
     group = Group.new(user)
+  
+    if(@groups[group_name])
+      send_error(socket,"Group name already exists")
+      return
+    end
+
     @groups[group_name] = group
+
     send_ok(socket)
-    loop do
-      # ...
+    while true
+      msg = socket.gets
+      if msg.nil?
+        puts "Connection lost: Bandleader #{user.name}"
+        # Close all of the sockets of the group members.
+        group.members.each {|m| m.socket.close}
+        # Delete the group.
+        @groups.delete(group_name)
+        return
+      end
     end
   end
 
   def group_member_loop(user, socket, group_name)
+    if(@groups[group_name].nil?)
+      send_error(socket,"Group does not exist")
+      return
+    else
+      send_ok(socket)
+    end
     group = @groups[group_name]
-    group.members << group
+    group.members << user
     # Group members are passive. The only thing they can do is quit.
     # And if that happens, I remove them from the group.
-    # Sleep will suffice for now
-    loop { sleep 300 }
+    # "Sleep" will suffice for now 
+    while true
+      msg = socket.gets
+      if msg.empty?
+        puts "Connection lost: #{user.name}"  
+        return
+      end
+    end
   end
 
 
@@ -94,7 +120,7 @@ class Server
       end
     # Only called if server forcefully killed.
     rescue IOError => e
-      #puts "#{e.message}"
+      puts "Server forcekilled"
     end
   end
 end

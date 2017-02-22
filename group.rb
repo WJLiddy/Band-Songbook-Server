@@ -1,4 +1,5 @@
 class Group
+  attr_reader :members
   def initialize(leader)
     @leader = leader
     @members = []
