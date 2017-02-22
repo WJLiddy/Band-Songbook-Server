@@ -15,6 +15,14 @@ class Server
     JSON.parse(socket.gets)
   end
 
+  def send_ok(socket)
+     socket.print ({"response" => "ok"}.to_json + "\n")
+  end
+
+  def send_error(socket, message)
+     socket.print ({"response" => "error", "error message" => message}.to_json + "\n")
+  end
+
   def bandleader_loop(user, socket)
     group = Group.new(user)
     groups[request['group name']] = group
@@ -32,7 +40,15 @@ class Server
     loop { sleep 300 }
   end
 
-  def launch
+  def launch(new_thread = false)
+    if(new_thread)
+      Thread.new {run_server}
+    else
+      run_server
+    end
+  end
+
+  def run_server
     server = TCPServer.open(44106)
     loop do
       Thread.start(server.accept) do |socket|
