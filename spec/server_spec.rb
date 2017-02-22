@@ -64,7 +64,7 @@ describe Server do
 
 
       # todo handle disconnection issues
-  describe "on disconnections" do
+    describe "on disconnections" do
 
         it "terminates group where leader left" do
 
@@ -116,6 +116,35 @@ describe Server do
             # Give server some time to process, close sockets.
             sleep(0.2)
             socket.close
+            s_threads.each { |s| s.close}
+        end
+    end
+
+    describe "on instrument selection" do
+
+        it "updates instruments" do
+            sleep(1)
+
+            s_threads = Server.new.launch(true)
+            # Have user create group
+            socket = TCPSocket.open("localhost", 44106)
+            socket.print ( {"request" =>"create group","group name" => "stp","user name" => "martha"}.to_json + "\n" ) 
+            response = JSON.parse(socket.gets)
+            # (ok)
+
+            # Have user connect to group
+            socket2 = TCPSocket.open("localhost", 44107)
+            socket2.puts ( {"request" =>"join group","group name" => "stp","user name" => "amy"}.to_json ) 
+
+            # consume the user joined group message
+            socket.gets
+            # tell the server to make amy play guitar and sing
+            socket.puts ({"request" => "set instrument","instruments" => ["guitar","vocal"],"user name" => "amy"}.to_json)
+            response = JSON.parse(socket.gets)
+            # first member (martha) is playing guitar
+            expect(response[1]["instruments"][0]).to eq("guitar")
+            socket.close
+            socket2.close
             s_threads.each { |s| s.close}
         end
     end

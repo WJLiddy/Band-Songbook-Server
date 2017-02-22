@@ -18,7 +18,7 @@ class Server
     begin
      socket.puts ({"response" => "ok"}.to_json)
      socket.flush
-    rescue Errno::ECONNRESET, IOError
+    rescue Errno::ECONNRESET, IOError, Errno::EPIPE
       # Just don't send it. The user will get removed in the loop soon enough.
     end
   end
@@ -28,7 +28,7 @@ class Server
      return if socket.closed?
      socket.puts ({"response" => "error", "error message" => message}.to_json )
      socket.flush
-      rescue Errno::ECONNRESET, IOError
+      rescue Errno::ECONNRESET, IOError, Errno::EPIPE
       # Just don't send it. The user will get removed in the loop soon enough.
       end
   end
@@ -38,7 +38,7 @@ class Server
       begin
       m.socket.puts (group.to_json)
       m.socket.flush
-      rescue Errno::ECONNRESET, IOError
+      rescue Errno::ECONNRESET, IOError, Errno::EPIPE
       # Just don't send it. The user will get removed in the loop soon enough.
       end
     end
@@ -56,7 +56,12 @@ class Server
 
     send_ok(socket)
     while true
-      msg = socket.gets
+      begin
+       msg = socket.gets
+      rescue Errno::ECONNRESET
+        retry
+      end
+
       if msg.nil?
         puts "Connection lost: Bandleader #{user.name}"
         # Close all of the sockets of the group members.
@@ -64,6 +69,20 @@ class Server
         # Delete the group.
         @groups.delete(group_name)
         return
+      else
+        #handle message
+        begin
+          request= JSON.parse(msg)
+        rescue JSON::ParserError => e
+          send_error(socket, e.message)
+          next
+        end
+
+        if(request["request"] == "set instrument")
+          user_to_edit_inst = (group.members.find {|m| m.name == request["user name"]})
+          user_to_edit_inst.instruments = request["instruments"]
+          send_updated_group_info(group)
+        end
       end
     end
   end

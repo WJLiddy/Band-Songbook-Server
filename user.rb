@@ -1,12 +1,13 @@
 class User
-  attr_reader :name, :instruments, :socket
-  @instruments = []
+  attr_reader :name, :socket
+  attr_accessor :instruments
   def initialize(name, socket)
     @name = name
     @socket = socket
+    @instruments = []
   end
 
-  def to_json
-    { "name" => @name, "instruments" => @instruments }.to_json
+  def jsonize
+    {"name" => @name, "instruments" => @instruments}
   end
 end
