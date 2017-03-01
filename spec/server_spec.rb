@@ -120,6 +120,7 @@ describe Server do
         end
     end
 
+=begin
     describe "on instrument selection" do
 
         it "updates instruments" do
@@ -148,4 +149,5 @@ describe Server do
             s_threads.each { |s| s.close}
         end
     end
+=end
 end

@@ -2,6 +2,7 @@ require_relative 'group'
 require_relative 'user'
 require 'json'
 require 'socket'
+
 class Server
   def initialize
     # TODO: In production. don't abort threads on exception, handle 'em
@@ -19,7 +20,7 @@ class Server
      socket.puts ({"response" => "ok"}.to_json)
      socket.flush
     rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-      # Just don't send it. The user will get removed in the loop soon enough.
+      # could not send because the client dc/d. Just abort sending.
     end
   end
 
@@ -29,7 +30,7 @@ class Server
      socket.puts ({"response" => "error", "error message" => message}.to_json )
      socket.flush
       rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-      # Just don't send it. The user will get removed in the loop soon enough.
+        # could not send because the client dc/d. Just abort sending.
       end
   end
 
@@ -39,7 +40,7 @@ class Server
       m.socket.puts (group.to_json)
       m.socket.flush
       rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-      # Just don't send it. The user will get removed in the loop soon enough.
+        # could not send because the client dc/d. Just abort sending.
       end
     end
   end
@@ -57,11 +58,12 @@ class Server
     send_ok(socket)
     while true
       begin
-       msg = socket.gets
-      rescue Errno::ECONNRESET
-        retry
+        msg = socket.gets
+     rescue  Errno::ECONNRESET
+        #abort connection
+        msg=nil
       end
-
+      
       if msg.nil?
         puts "Connection lost: Bandleader #{user.name}"
         # Close all of the sockets of the group members.
@@ -70,7 +72,7 @@ class Server
         @groups.delete(group_name)
         return
       else
-        #handle message
+        # try to parse request
         begin
           request= JSON.parse(msg)
         rescue JSON::ParserError => e
@@ -78,11 +80,7 @@ class Server
           next
         end
 
-        if(request["request"] == "set instrument")
-          user_to_edit_inst = (group.members.find {|m| m.name == request["user name"]})
-          user_to_edit_inst.instruments = request["instruments"]
-          send_updated_group_info(group)
-        end
+        # remove set-instrument requirement.
       end
     end
   end
