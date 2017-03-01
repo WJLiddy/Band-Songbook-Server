@@ -1,7 +1,7 @@
 require_relative 'group'
-require_relative 'user'
+require_relative 'client_connection'
+require_relative 'songbook_socket'
 require 'json'
-require 'socket'
 
 class Server
   def initialize
@@ -50,7 +50,7 @@ class Server
 
   # we know the request user name, request, and group names are all valid.
   # return when we are done talking to the client, or the client crashed.
-  def handle_request(socket, user_name, request. group_name)
+  def handle_request(socket, user_name, request, group_name)
     if request == "create group"
       if @groups[group_name]
         socket.send_error("Group name is already taken")
@@ -89,7 +89,7 @@ class Server
           end
 
           # Make sure the proper fields are there
-          if(request.nil? || request['user name'].nil? || request['request'].nil? || request['group name'].nil? ))
+          if(request.nil? || request['user name'].nil? || request['request'].nil? || request['group name'].nil? )
             songbook_socket.send_error(socket, "JSON was well formed but missing username or request field")
             songbook_socket.close
             return

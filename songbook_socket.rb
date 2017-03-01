@@ -1,3 +1,5 @@
+require 'socket'
+
 # Small Socket class that sits on top of Ruby's socket API and provides some helpers
 class SongbookSocket
   attr_reader :closed
@@ -28,7 +30,7 @@ class SongbookSocket
   end
 
   def send_error(message)
-    send_json("response" => "error", "error message" => message}.to_json)
+    send_json({"response" => "error", "error message" => message}.to_json)
   end
 
   def close
