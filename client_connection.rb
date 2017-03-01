@@ -19,19 +19,19 @@ class ClientConnection
     else
       @all_groups[group_name].add_member(@user)
       @group =  @all_groups[group_name]
-      @group.send_updated_group_info
+      @group.update_group_info
     end
   end
 
   def abort_conn
     if(@leader)
-      puts "Connection lost: Bandleader #{user.name}"
+      puts "Connection lost: Bandleader #{@user.name}"
       # Close all of the sockets of the group members.
       @group.close
       # Delete the group.
       @all_groups.delete(@group_name)
     else
-      puts "Connection lost: #{user.name}"  
+      puts "Connection lost: #{@user.name}"  
       @group.delete_member(user)
     end
   end

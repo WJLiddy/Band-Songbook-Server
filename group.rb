@@ -17,7 +17,7 @@ class Group
   end
 
   def all_songsockets
-    return (@members + @leader).map{|m| m.songsocket}
+    return (@members + [@leader]).map{|m| m.songbook_socket}
   end
 
   def add_member(user)
@@ -28,8 +28,8 @@ class Group
     @members.delete(user)
   end
 
-  def close_group
-    @all_songsockets.send_json({"session" => "end"})
+  def close
+    all_songsockets.each {|s| s.send_json({"session" => "end"}); s.close}
   end
 
   def forward_songs(song_list)
@@ -38,7 +38,8 @@ class Group
     end
   end
 
-  def to_json
-    @members.map{|m| m.jsonize}.to_json
+  def update_group_info
+    msg = (@members + [@leader]).map{|m| m.name}.to_json
+    all_songsockets.each {|s| s.send_json(msg)}
   end
 end

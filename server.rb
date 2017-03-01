@@ -10,32 +10,6 @@ class Server
     @all_groups = {}
   end
 
-=begin
-  def group_member_loop(user, socket, group_name)
-
-
-    # Group members are passive. The only thing they can do is quit.
-    # And if that happens, I remove them from the group.
-    # What i do is read (which updates the socket state) and If i get an exception, I close.
-    
-
-    begin
-    while true
-      sleep 0.1
-      socket.read
-      if socket.closed?
-        raise IOError
-      end
-    end
-    rescue IOError
-
-      return
-    end
-
-  end
-=end
-
-
   # If "test" is enabled, returns the sockets so they can be closed.
   def launch(test = false)
     if(test)
