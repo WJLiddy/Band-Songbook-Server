@@ -7,66 +7,12 @@ class Server
   def initialize
     # TODO: In production. don't abort threads on exception, handle 'em
     Thread.abort_on_exception = true
-    @groups = {}
+    @all_groups = {}
   end
 
-  def valid_group?()
-      group = Group.new(user)
-  
-
-      send_error(socket,"Group name already exists")
-      return
-    end
-
-    @groups[group_name] = group
-  end
-
-    def bandleader_loop(user, socket, group_name)
-
-
-    send_ok(socket)
-    while true
-      begin
-        msg = socket.gets
-     rescue  Errno::ECONNRESET
-        #abort connection
-        msg=nil
-      end
-
-      if msg.nil?
-        puts "Connection lost: Bandleader #{user.name}"
-        # Close all of the sockets of the group members.
-        group.members.each {|m| m.socket.close}
-        # Delete the group.
-        @groups.delete(group_name)
-        return
-      else
-        # try to parse request
-        begin
-          request= JSON.parse(msg)
-        rescue JSON::ParserError => e
-          send_error(socket, e.message)
-          next
-        end
-
-        # C4
-        if(request["request"] == "begin session" && request["songs"])
-
-        end
-      end
-    end
-  end
-
+ 
   def group_member_loop(user, socket, group_name)
-    if(@groups[group_name].nil?)
-      send_error(socket,"Group does not exist")
-      return
-    else
-      send_ok(socket)
-    end
-    group = @groups[group_name]
-    group.members << user
-    send_updated_group_info(group)
+
 
     # Group members are passive. The only thing they can do is quit.
     # And if that happens, I remove them from the group.
@@ -80,8 +26,7 @@ class Server
       end
     end
     rescue IOError
-      puts "Connection lost: #{user.name}"  
-      group.members.delete(user)
+
       return
     end
 
@@ -112,7 +57,7 @@ class Server
         return
       else
        # group name ok. start the server. This returns when the connection ends.
-       ClientConnection.start(user, socket, group_name, true) 
+       ClientConnection.new(user, socket, group_name, true, @all_groups).start
      end
    else
       # we tried to join a group.
@@ -120,7 +65,7 @@ class Server
         socket.send_error("Group name does not exist")
         return
       else
-       ClientConnection.start(user, socket, group_name, false) 
+       ClientConnection.new(user, socket, group_name, false, @all_groups).start
       end
     end
   end

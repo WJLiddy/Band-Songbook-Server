@@ -1,7 +1,7 @@
 # Just holds the names and sockets for all the users, and provides some group methods to address the entire group
 class Group
   # define user struct
-  Struct.new("User", :name, :songsocket)
+  User = Struct.new(:name, :songsocket)
   def initialize(leader)
     @leader = leader
     @members = []
@@ -37,7 +37,7 @@ class Group
       send_json({"session" => "start", "songs" => song_list}.to_json)
     end
   end
-  
+
   def to_json
     @members.map{|m| m.jsonize}.to_json
   end
