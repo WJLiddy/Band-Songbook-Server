@@ -1,7 +1,7 @@
+  # define user struct
+
 # Just holds the names and sockets for all the users, and provides some group methods to address the entire group
 class Group
-  # define user struct
-  User = Struct.new(:name, :songsocket)
   def initialize(leader)
     @leader = leader
     @members = []

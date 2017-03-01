@@ -1,20 +1,23 @@
+require_relative 'group'
+
+Struct.new("User", :name, :songbook_socket) #=> Struct::Point
+
 class ClientConnection
 
-
   def initialize(user_name, socket, group_name, is_leader, all_groups) 
-    @user = User.new(user_name,socket)
-    user.songsocket.send_ok
+    #inst. class vars
+    @user = Struct::User.new(user_name,socket) 
+    @user.songbook_socket.send_ok
     @group_name = group_name
-
     @leader = is_leader
-    
     @all_groups = all_groups
 
+    #do group operations
     if(is_leader)
-      @group =  Group.new(user)
-      @all_groups[group_name] = group
+      @group =  Group.new(@user)
+      @all_groups[group_name] = @group
     else
-      @all_groups[group_name].add_member(user)
+      @all_groups[group_name].add_member(@user)
       @group =  @all_groups[group_name]
       @group.send_updated_group_info
     end
@@ -36,7 +39,7 @@ class ClientConnection
   def start
    while true
       begin
-        msg =  @user.songbooksocket.recv_json
+        msg =  @user.songbook_socket.recv_json
      rescue  Errno::ECONNRESET
         #abort connection
         abort_conn
@@ -47,7 +50,7 @@ class ClientConnection
         begin
           request = JSON.parse(msg)
         rescue JSON::ParserError => e
-          @user.songbooksocket.send_error(socket, e.message)
+          @user.songbook_socket.send_error(socket, e.message)
           next
         end
 
