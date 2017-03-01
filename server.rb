@@ -10,13 +10,15 @@ class Server
     @all_groups = {}
   end
 
- 
+=begin
   def group_member_loop(user, socket, group_name)
 
 
     # Group members are passive. The only thing they can do is quit.
     # And if that happens, I remove them from the group.
     # What i do is read (which updates the socket state) and If i get an exception, I close.
+    
+
     begin
     while true
       sleep 0.1
@@ -31,6 +33,7 @@ class Server
     end
 
   end
+=end
 
 
   # If "test" is enabled, returns the sockets so they can be closed.
@@ -50,22 +53,22 @@ class Server
 
   # we know the request user name, request, and group names are all valid.
   # return when we are done talking to the client, or the client crashed.
-  def handle_request(socket, user_name, request, group_name)
+  def handle_connection(socket, user_name, request, group_name)
     if request == "create group"
-      if @groups[group_name]
+      if @all_groups[group_name]
         socket.send_error("Group name is already taken")
         return
       else
        # group name ok. start the server. This returns when the connection ends.
-       ClientConnection.new(user, socket, group_name, true, @all_groups).start
+       ClientConnection.new(user_name, socket, group_name, true, @all_groups).start
      end
    else
       # we tried to join a group.
-      if !@groups[group_name]
+      if !@all_groups[group_name]
         socket.send_error("Group name does not exist")
         return
       else
-       ClientConnection.new(user, socket, group_name, false, @all_groups).start
+       ClientConnection.new(user_name, socket, group_name, false, @all_groups).start
       end
     end
   end
@@ -84,20 +87,20 @@ class Server
           rescue JSON::ParserError => e
             # they didn't send a valid json, just quit.
             songbook_socket.send_error(e.message)
-            songbook_socket.close
-            return
+            invalid = true
           end
 
           # Make sure the proper fields are there
           if(request.nil? || request['user name'].nil? || request['request'].nil? || request['group name'].nil? )
-            songbook_socket.send_error(socket, "JSON was well formed but missing username or request field")
-            songbook_socket.close
-            return
+            songbook_socket.send_error("JSON was well formed but missing username or request field")
+            invalid = true
           end
 
           # We got a well formed request, so handle the connection. 
           # This function only returns when the session is over.
-          handle_connection(songbook_socket, request['user name'], request['request'], request['group name'])
+          if(!invalid)
+            handle_connection(songbook_socket, request['user name'], request['request'], request['group name'])
+          end
 
           puts 'Connection Terminated.'
           songbook_socket.close
