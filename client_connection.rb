@@ -32,7 +32,7 @@ class ClientConnection
       @all_groups.delete(@group_name)
     else
       puts "Connection lost: #{@user.name}"  
-      @group.delete_member(user)
+      @group.delete_member(@user)
     end
   end
 
