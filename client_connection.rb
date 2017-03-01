@@ -40,7 +40,7 @@ class ClientConnection
    while true
       begin
         msg =  @user.songbook_socket.recv_json
-     rescue  Errno::ECONNRESET
+     rescue  Errno::ECONNRESET, IOError
         #abort connection
         abort_conn
         return

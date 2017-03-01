@@ -12,7 +12,14 @@ class SongbookSocket
   # blocks until it recieves a new line from the client, and parses the json.
   # throws error if json not well formed.
   def recv_json
-    JSON.parse(@socket.gets)
+    # gets returns nil on the end-of-file condition
+    msg = @socket.gets
+    if msg
+      return JSON.parse(msg)
+    else
+      close
+      return nil
+    end
   end
 
   # send jsonstring to this socket.
