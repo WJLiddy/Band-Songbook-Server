@@ -9,51 +9,20 @@ class Server
     Thread.abort_on_exception = true
     @groups = {}
   end
+
+  def valid_group?()
+      group = Group.new(user)
   
-  # blocks until it recieves a new line from the socket, and parses the json.
-  def recv_json(socket)
-    JSON.parse(socket.gets)
-  end
 
-  def send_ok(socket)
-    begin
-     socket.puts ({"response" => "ok"}.to_json)
-     socket.flush
-    rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-      # could not send because the client dc/d. Just abort sending.
-    end
-  end
-
-  def send_error(socket, message)
-     begin
-     return if socket.closed?
-     socket.puts ({"response" => "error", "error message" => message}.to_json )
-     socket.flush
-      rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-        # could not send because the client dc/d. Just abort sending.
-      end
-  end
-
-  def send_updated_group_info(group)
-    group.members.each do |m|
-      begin
-      m.socket.puts (group.to_json)
-      m.socket.flush
-      rescue Errno::ECONNRESET, IOError, Errno::EPIPE
-        # could not send because the client dc/d. Just abort sending.
-      end
-    end
-  end
-
-  def bandleader_loop(user, socket, group_name)
-    group = Group.new(user)
-  
-    if(@groups[group_name])
       send_error(socket,"Group name already exists")
       return
     end
 
     @groups[group_name] = group
+  end
+
+    def bandleader_loop(user, socket, group_name)
+
 
     send_ok(socket)
     while true
@@ -63,7 +32,7 @@ class Server
         #abort connection
         msg=nil
       end
-      
+
       if msg.nil?
         puts "Connection lost: Bandleader #{user.name}"
         # Close all of the sockets of the group members.
@@ -80,7 +49,10 @@ class Server
           next
         end
 
-        # remove set-instrument requirement.
+        # C4
+        if(request["request"] == "begin session" && request["songs"])
+
+        end
       end
     end
   end
@@ -131,35 +103,59 @@ class Server
     end
   end
 
+  # we know the request user name, request, and group names are all valid.
+  # return when we are done talking to the client, or the client crashed.
+  def handle_request(socket, user_name, request. group_name)
+    if request == "create group"
+      if @groups[group_name]
+        socket.send_error("Group name is already taken")
+        return
+      else
+       # group name ok. start the server. This returns when the connection ends.
+       ClientConnection.start(user, socket, group_name, true) 
+     end
+   else
+      # we tried to join a group.
+      if !@groups[group_name]
+        socket.send_error("Group name does not exist")
+        return
+      else
+       ClientConnection.start(user, socket, group_name, false) 
+      end
+    end
+  end
+
   def run_server(server)
     begin
       loop do
         Thread.start(server.accept) do |socket|
           puts 'Connection Recieved.'
-          # Await the first JSON packet to tell what room they want to join,
-          # or if they want to create.
+
+          songbook_socket = SongbookSocket.new(socket)
+          # Await the first JSON packet to see what they want.
+
           begin
-            request = recv_json(socket)
+            request = songbook_socket.recv_json 
           rescue JSON::ParserError => e
-            send_error(socket, e.message)
-            request = nil
+            # they didn't send a valid json, just quit.
+            songbook_socket.send_error(e.message)
+            songbook_socket.close
+            return
           end
 
           # Make sure the proper fields are there
-          if(!request.nil? && (request['user name'].nil? || request['request'].nil?))
-            send_error(socket, "JSON was well formed but missing username or request field")
-            request = nil
+          if(request.nil? || request['user name'].nil? || request['request'].nil? || request['group name'].nil? ))
+            songbook_socket.send_error(socket, "JSON was well formed but missing username or request field")
+            songbook_socket.close
+            return
           end
 
-          if(!request.nil?)
-            # Create the user
-            user = User.new(request['user name'], socket)
-            # Create or join the group.
-            bandleader_loop(user, socket, request['group name']) if request['request'] == 'create group'
-            group_member_loop(user, socket, request['group name']) if request['request'] == 'join group'
-          end
+          # We got a well formed request, so handle the connection. 
+          # This function only returns when the session is over.
+          handle_connection(songbook_socket, request['user name'], request['request'], request['group name'])
+
           puts 'Connection Terminated.'
-          socket.close
+          songbook_socket.close
         end
       end
     # Only called if server forcefully killed.
