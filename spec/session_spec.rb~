@@ -1,5 +1,0 @@
-#Setup phase. have two people connect before each test
-describe Session do
-  before(:example) do
-    @thing = Thing.new
-  end

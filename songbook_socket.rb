@@ -10,16 +10,23 @@ class SongbookSocket
   end
 
   # blocks until it recieves a new line from the client, and parses the json.
-  # throws error if json not well formed.
+  # returns a valid hash if json was good.
+  # returns nil if the server quites
   def recv_json
     # gets returns nil on the end-of-file condition
-    msg = @socket.gets
-    puts "\033[36m #{Time.new.inspect}: RECIEVED  #{msg} \033[39m";
-    if msg
-      return JSON.parse(msg)
-    else
-      close
-      return nil
+    begin
+      msg = @socket.gets
+      puts "\033[36m #{Time.new.inspect}: RECIEVED  #{msg} \033[39m";
+      if msg
+        parsed = JSON.parse(msg)
+        return parsed
+      else
+        close
+        return nil
+      end
+    rescue JSON::ParserError => e
+      send_error(e.message)
+      retry
     end
   end
 

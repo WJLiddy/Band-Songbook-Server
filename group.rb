@@ -33,8 +33,8 @@ class Group
   end
 
   def forward_songs(song_list)
-    follower_songsockets.each do |g|
-      send_json({"session" => "start", "songs" => song_list}.to_json)
+    (@members-[@leader]).each do |g|
+      g.songbook_socket.send_json({"session" => "start", "songs" => song_list}.to_json)
     end
   end
 

@@ -48,18 +48,11 @@ class ClientConnection
       end
 
       if msg
-        begin
-          request = JSON.parse(msg)
-        rescue JSON::ParserError => e
-          @user.songbook_socket.send_error(socket, e.message)
-          next
-        end
-
         # MSG was ok.
         if(@leader)
           # C4
-          if(request["request"] == "begin session" && request["songs"])
-            @group.forward_songs(request["songs"])
+          if(msg["request"] == "begin session" && msg["songs"])
+            @group.forward_songs(msg["songs"])
           end
         end
       end
