@@ -21,7 +21,7 @@ class Server
 
       return [t1, t2]
     else
-      run_server(TCPServer.open(44106))
+      run_server(TCPServer.open(54106))
     end
   end
 
