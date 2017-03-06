@@ -33,6 +33,7 @@ class ClientConnection
     else
       puts "Connection lost: #{@user.name}"  
       @group.delete_member(@user)
+      @group.update_group_info
     end
   end
 

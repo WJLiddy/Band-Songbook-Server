@@ -49,6 +49,7 @@ class Server
 
   def run_server(server)
     begin
+      puts "Server Launched."
       loop do
         Thread.start(server.accept) do |socket|
           puts 'Connection Recieved.'

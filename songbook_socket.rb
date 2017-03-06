@@ -14,6 +14,7 @@ class SongbookSocket
   def recv_json
     # gets returns nil on the end-of-file condition
     msg = @socket.gets
+    puts "\033[36m #{Time.new.inspect}: RECIEVED  #{msg} \033[39m";
     if msg
       return JSON.parse(msg)
     else
@@ -24,6 +25,7 @@ class SongbookSocket
 
   # send jsonstring to this socket.
   def send_json(jsonstring)
+    puts "\033[32m #{Time.new.inspect} SENT #{jsonstring}  \033[39m";
     begin
      @socket.puts (jsonstring)
      @socket.flush

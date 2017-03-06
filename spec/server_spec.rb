@@ -95,6 +95,7 @@ describe Server do
             s_threads.each { |s| s.close}
         end
 
+        # (test3)
         it "cancels group members who leave" do
 
             s_threads = Server.new.launch(true)
@@ -102,16 +103,29 @@ describe Server do
             # Have user create group
             socket = TCPSocket.open("localhost", 44106)
             socket.print ( {"request" =>"create group","group name" => "stp","user name" => "martha"}.to_json + "\n" ) 
+            # recv OK
             response =  JSON.parse(socket.gets)
+
 
             # Have user connect to group
             socket2 = TCPSocket.open("localhost", 44107)
             socket2.print ( {"request" =>"join group","group name" => "stp","user name" => "amy"}.to_json + "\n" ) 
+            #RECV OK
             response =  JSON.parse(socket2.gets)
+
+
+            #See that the leader gets the list of band members.
+            resp = JSON.parse(socket.gets)
+            expect(resp[0]).to eq("amy")
+            expect(resp[1]).to eq("martha")
 
             # band member disconnects
             puts "closed a socket."
             socket2.close
+
+            #See that the leader gets the list of band members.
+            resp = JSON.parse(socket.gets)
+            expect(resp.size).to eq(1)
             
             # Give server some time to process, close sockets.
             sleep(0.2)
@@ -119,35 +133,4 @@ describe Server do
             s_threads.each { |s| s.close}
         end
     end
-
-=begin
-    describe "on instrument selection" do
-
-        it "updates instruments" do
-            sleep(1)
-
-            s_threads = Server.new.launch(true)
-            # Have user create group
-            socket = TCPSocket.open("localhost", 44106)
-            socket.print ( {"request" =>"create group","group name" => "stp","user name" => "martha"}.to_json + "\n" ) 
-            response = JSON.parse(socket.gets)
-            # (ok)
-
-            # Have user connect to group
-            socket2 = TCPSocket.open("localhost", 44107)
-            socket2.puts ( {"request" =>"join group","group name" => "stp","user name" => "amy"}.to_json ) 
-
-            # consume the user joined group message
-            socket.gets
-            # tell the server to make amy play guitar and sing
-            socket.puts ({"request" => "set instrument","instruments" => ["guitar","vocal"],"user name" => "amy"}.to_json)
-            response = JSON.parse(socket.gets)
-            # first member (martha) is playing guitar
-            expect(response[1]["instruments"][0]).to eq("guitar")
-            socket.close
-            socket2.close
-            s_threads.each { |s| s.close}
-        end
-    end
-=end
 end
