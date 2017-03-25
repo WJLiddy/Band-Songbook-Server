@@ -52,8 +52,15 @@ class ClientConnection
         if(@leader)
           # C4
           if(msg["request"] == "begin session" && msg["songs"])
+            @user.songbook_socket.send_ok
             @group.forward_songs(msg["songs"])
           end
+          if(msg["request"] == "switch song" && msg["song id"])
+            @user.songbook_socket.send_ok
+            @group.switch_songs(msg["song id"])
+          end
+        else
+          # not leader.
         end
       end
     end

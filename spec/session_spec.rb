@@ -5,8 +5,15 @@ require 'json'
 #Setup phase. have two people connect before each test
 describe Server do
 
+  before(:all) do
+    @s_threads = Server.new.launch(true)
+  end
+
+  after(:all) do
+    @s_threads.each { |s| s.close}
+  end
+
   before(:each) do
-    s_threads = Server.new.launch(true)
 
     # Have user create group
     @socket = TCPSocket.open("localhost", 44106)
@@ -28,7 +35,26 @@ describe Server do
     msg = JSON::parse(@socket2.gets)
     expect(msg["session"]).to eq("start")
     # TODO. parse XML. But, this wrks
-    # puts msg["songs"][0]
+    expect(msg["songs"][0][0]).to eq("<")
+  end
+
+  it "allows clients to switch songs" do
+    # Have martha upload two songs.
+    songs = [File.open("tabs/XML/Traditional - Silent Night.xml").read , File.open("tabs/XML/Green Day - When I Come Around v4.xml").read]
+    @socket.puts ({"request" => "begin session", "songs" => songs }.to_json)
+
+    # The XML is parsed and the session is started.
+    msg = JSON::parse(@socket2.gets)
+
+    puts "switching song..."
+    # Matha says to switch to the second song.
+    @socket.print ( {"request" =>"switch song","song id" => 1}.to_json + "\n" ) 
+
+    # Amy should recieve this exact message.
+    msg = JSON::parse(@socket2.gets)
+    puts "MSG IS #{msg}"
+    puts "SONG ID IS #{msg["song id"]}"
+    expect(msg["song id"]).to eq(1)
   end
 
   after(:each) do

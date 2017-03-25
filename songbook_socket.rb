@@ -36,7 +36,7 @@ class SongbookSocket
     begin
      @socket.puts (jsonstring)
      @socket.flush
-    rescue Errno::ECONNRESET, IOError, Errno::EPIPE
+    rescue Errno::ECONNRESET, IOError, Errno::EPIPE, RuntimeError
       close
     end
   end

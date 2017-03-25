@@ -96,7 +96,7 @@ describe Server do
         end
 
         # (test3)
-        it "cancels group members who leave" do
+        it "cancels group members who leave by closing socket" do
 
             s_threads = Server.new.launch(true)
 

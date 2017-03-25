@@ -38,6 +38,12 @@ class Group
     end
   end
 
+  def switch_songs(song_number)
+    (@members-[@leader]).each do |g|
+      g.songbook_socket.send_json({"session" => "switch", "song id" => song_number}.to_json)
+    end
+  end
+
   def update_group_info
     msg = (@members + [@leader]).map{|m| m.name}.to_json
     all_songsockets.each {|s| s.send_json(msg)}
