@@ -15,6 +15,7 @@ class SongbookSocket
   def recv_json
     # gets returns nil on the end-of-file condition
     begin
+
       msg = @socket.gets
       puts "\033[36m #{Time.new.inspect}: RECIEVED  #{msg} \033[39m";
       if msg
@@ -27,6 +28,10 @@ class SongbookSocket
     rescue JSON::ParserError => e
       send_error(e.message)
       retry
+    rescue  Errno::ETIMEDOUT
+      puts "User timed out!"
+      close
+      return nil
     end
   end
 
