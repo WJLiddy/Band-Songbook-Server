@@ -44,6 +44,19 @@ class Group
     end
   end
 
+  def begin_playback(msg)
+    (@members-[@leader]).each do |g|
+      g.songbook_socket.send_json({"session" => "begin playback", "measure" => msg["measure"], "tempo" => msg["tempo"], "time" => msg["time"]}.to_json)
+    end
+  end
+
+  def stop_playback
+    (@members-[@leader]).each do |g|
+      g.songbook_socket.send_json({"session" => "stop playback"}.to_json)
+    end
+  end
+
+
   def update_group_info
     msg = (@members + [@leader]).map{|m| m.name}.to_json
     all_songsockets.each {|s| s.send_json(msg)}

@@ -59,6 +59,16 @@ class ClientConnection
             @user.songbook_socket.send_ok
             @group.switch_songs(msg["song id"])
           end
+          # TODO stricter error checking
+          if(msg["request"] == "begin playback" && msg["measure"] && msg["tempo"] && msg["time"])
+            @user.songbook_socket.send_ok
+            @group.begin_playback(msg)
+          end
+          #TODO stricter error checking
+          if(msg["request"] == "stop playback")
+            @user.songbook_socket.send_ok
+            @group.stop_playback
+          end
         else
           # not leader.
         end
