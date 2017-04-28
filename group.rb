@@ -58,7 +58,7 @@ class Group
 
 
   def update_group_info
-    msg = (@members + [@leader]).map{|m| m.name}.to_json
-    all_songsockets.each {|s| s.send_json(msg)}
+    msg = (@members + [@leader]).map{|m| m.name}
+    all_songsockets.each {|s| s.send_json({"group members" => msg}.to_json)}
   end
 end
